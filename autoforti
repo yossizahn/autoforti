@@ -1,32 +1,48 @@
-#!/usr/bin/env -S uv run --script --no-project
+#!/usr/bin/env uv run --script
 # /// script
 # dependencies = [
 #     "imap-tools",
 #     "pexpect",
 # ]
 # ///
-
+import os
+import sys
 from time import sleep
 
-from pexpect import spawn, EOF
-from imap_tools import MailBox, AND
+from imap_tools import AND, MailBox
+from pexpect import EOF, spawn
 
+# IMAP settings
 IMAP_HOST = "imap.gmail.com"
 # for gmail this is your email address
 IMAP_LOGIN = "youremail@gmail.com"
 # for gmail you need to create an app password
 IMAP_PASSWORD = "<your app password>"
-# you can set your sudo password here. Make sure to uncomment below lines 48-49
+# you can set your sudo password here
+# make sure to uncomment the commented lines below in `run_vpn` function also
 # SUDO_PASSWORD = 'sudo_password'
 
+CONNECT_COMMAND = (
+    ('osascript -e \'display notification "VPN connected" with title "Forticlient"\'')
+    if sys.platform == "darwin"
+    else None
+)
+DISCONNECT_COMMAND = (
+    (
+        'osascript -e \'display notification "VPN disconnected" with title "Forticlient"\''
+    )
+    if sys.platform == "darwin"
+    else None
+)
 
-def get2fa():
+
+def get2fa() -> str:
     print("Waiting for 2FA code...")
     sleep(4)
     with MailBox(IMAP_HOST).login(IMAP_LOGIN, IMAP_PASSWORD) as mailbox:
         for _ in range(5):
             messages = mailbox.fetch(
-                AND(seen=False, from_="DoNotReply@notification.fortinet.net")
+                AND(seen=False, from_="DoNotReply@notification.fortinet.net"),
             )
             msg = next(messages, None)
             if msg is None:
@@ -39,10 +55,10 @@ def get2fa():
             mailbox.move(msg.uid, "[Gmail]/All Mail")
             return msg.subject.replace("AuthCode: ", "")
     print("No 2FA code found after 5 attempts")
-    exit(1)
+    sys.exit(1)
 
 
-def run_vpn():
+def run_vpn() -> None:
     ofv = spawn("sudo openfortivpn")
     # uncomment if you want to use sudo password
     # ofv.expect(['Password:'])
@@ -53,13 +69,17 @@ def run_vpn():
     ofv.sendline(code)
     ofv.expect("Tunnel is up and running.")
     print("VPN connected")
+    if CONNECT_COMMAND is not None:
+        os.system(CONNECT_COMMAND)
     ofv.expect(EOF, timeout=None)
     print("VPN disconnected, reconnecting...")
+    if DISCONNECT_COMMAND is not None:
+        os.system(DISCONNECT_COMMAND)
 
 
-while True:
-    try:
+try:
+    while True:
         run_vpn()
-    except KeyboardInterrupt:
-        print("Exiting...")
-        break
+except KeyboardInterrupt:
+    print("Exiting...")
+    sys.exit(0)

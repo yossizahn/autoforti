@@ -1,0 +1,7 @@
+target-version = "py39"
+
+include = ['./autoforti']
+
+[lint]
+select = ["ALL"]
+ignore = ["D103", "D100", "EXE003", "S105", "ERA001", "T201", "S605"]
