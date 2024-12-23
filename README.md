@@ -15,6 +15,18 @@ Do you also hate the official Forticlient for macOS? Do you want a client that r
 `uv` is not technically required, it's just a nice way to run a self-contained Python script, and it's what I have used.
 
 ### Setup
+#### Configure `openforticlient`
+Find the default location of `openforticlient`'s configuration file by running `openfortivpn --help`.
+On the homebrew version on Apple Silicon it's `/opt/homebrew/etc/openfortivpn/openfortivpn/config`.
+
+Create the file if it doesn't exist, and fill in these values:
+```conf
+host =
+port =
+username =
+password =
+```
+
 #### Root permission for `openforticlient`
 Running `openforticlient` requires you to be `root`. The script runs `sudo openforticlient` non-interactively, so you can't enter your password in the terminal.
 Technically I can have the script relinquish control to the terminal for entering the `sudo` password, but there are nicer solutions.
