@@ -23,8 +23,8 @@ Technically I can have the script relinquish control to the terminal for enterin
 ```sh
 sed -e 's/^#auth/auth/' /etc/pam.d/sudo_local.template | sudo tee /etc/pam.d/sudo_local
 ```
-- You can configure the script to automatically enter your `sudo` password by uncommenting and setting `SUDO_PASSWORD = 'sudo_password'` on line 20, and also uncommenting lines 50-51
-- You can configure `sudo` not to require authentication when running `openfortivpn`
+- You can configure the script to automatically enter your `sudo` password by uncommenting and setting `SUDO_PASSWORD = 'sudo_password'` on line 20, and also uncommenting lines 48-49
+- You can configure `sudo` to not require authentication when running `openfortivpn`
 ```sh
 sudo visudo --file=/etc/sudoers.d/openfortivpn
 ```
