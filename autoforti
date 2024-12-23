@@ -1,0 +1,65 @@
+#!/usr/bin/env -S uv run --script --no-project
+# /// script
+# dependencies = [
+#     "imap-tools",
+#     "pexpect",
+# ]
+# ///
+
+from time import sleep
+
+from pexpect import spawn, EOF
+from imap_tools import MailBox, AND
+
+IMAP_HOST = "imap.gmail.com"
+# for gmail this is your email address
+IMAP_LOGIN = "youremail@gmail.com"
+# for gmail you need to create an app password
+IMAP_PASSWORD = "<your app password>"
+# you can set your sudo password here. Make sure to uncomment below lines 48-49
+# SUDO_PASSWORD = 'sudo_password'
+
+
+def get2fa():
+    print("Waiting for 2FA code...")
+    sleep(4)
+    with MailBox(IMAP_HOST).login(IMAP_LOGIN, IMAP_PASSWORD) as mailbox:
+        for _ in range(5):
+            messages = mailbox.fetch(
+                AND(seen=False, from_="DoNotReply@notification.fortinet.net")
+            )
+            msg = next(messages, None)
+            if msg is None:
+                print("No 2FA code found, retrying...")
+                sleep(4)
+                continue
+            # archive message
+            print("2FA code found:", msg.subject.replace("AuthCode: ", ""))
+            print("Archiving email message...")
+            mailbox.move(msg.uid, "[Gmail]/All Mail")
+            return msg.subject.replace("AuthCode: ", "")
+    print("No 2FA code found after 5 attempts")
+    exit(1)
+
+
+def run_vpn():
+    ofv = spawn("sudo openfortivpn")
+    # uncomment if you want to use sudo password
+    # ofv.expect(['Password:'])
+    # ofv.sendline(SUDO_PASSWORD)
+    ofv.expect("Two-factor authentication token:")
+    print("2FA code requested")
+    code = get2fa()
+    ofv.sendline(code)
+    ofv.expect("Tunnel is up and running.")
+    print("VPN connected")
+    ofv.expect(EOF, timeout=None)
+    print("VPN disconnected, reconnecting...")
+
+
+while True:
+    try:
+        run_vpn()
+    except KeyboardInterrupt:
+        print("Exiting...")
+        break
