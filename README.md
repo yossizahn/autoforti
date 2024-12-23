@@ -65,6 +65,10 @@ You may want to delete it instead:
 ```python
 mailbox.delete(msg.uid)
 ```
+For gmail this code seems to be necessary to delete:
+```python
+mailbox.move(msg.uid, "[Gmail]/Bin")
+```
 
 ### Running
 ```sh
